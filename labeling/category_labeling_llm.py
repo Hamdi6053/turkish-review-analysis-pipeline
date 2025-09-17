@@ -10,15 +10,15 @@ import colorama
 from colorama import Fore, Style
 import datetime
 
-# Colorama başlatma
+
 colorama.init()
 
 CONFIG = {
-    'output_folder': 'kategori_sonuclari',  # Sonuçların kaydedileceği klasör
+    'output_folder': 'kategori_sonuclari',  
     'model_name': "gemma2:9b",
     'max_retries': 3,
     'retry_delay': 1,
-    'cache_size': 1000  # Önbellek boyutu
+    'cache_size': 1000 
 }
 
 def print_colored(text, color=Fore.WHITE, style=Style.NORMAL, end='\n'):
@@ -49,7 +49,7 @@ def analyze_comment_for_category(comment, category, description):
     {description}
     """
     
-    # Retry mekanizması
+   
     for attempt in range(CONFIG['max_retries']):
         try:
             print_colored(f"Yorum analiz ediliyor... Deneme: {attempt+1}/{CONFIG['max_retries']}", Fore.BLUE)
@@ -60,10 +60,10 @@ def analyze_comment_for_category(comment, category, description):
                 options={"temperature": 0.1}
             )
             
-            # Yanıtı işle
+          
             response_text = response['message']['content'].lower()
             
-            # "1" veya "evet" içeriyorsa 1, aksi halde 0 döndür
+           
             result = 1 if ('1' in response_text or 'evet' in response_text) else 0
             
             print_colored(f"Analiz sonucu: {result}", Fore.GREEN if result == 1 else Fore.RED)
@@ -74,8 +74,7 @@ def analyze_comment_for_category(comment, category, description):
             if attempt < CONFIG['max_retries'] - 1:
                 print_colored(f"{CONFIG['retry_delay']} saniye bekleniyor...", Fore.YELLOW)
                 time.sleep(CONFIG['retry_delay'])
-    
-    # Tüm denemeler başarısız olursa 0 döndür
+   
     print_colored("Tüm denemeler başarısız oldu! Varsayılan sonuç: 0", Fore.RED, Style.BRIGHT)
     return 0
 
@@ -95,10 +94,7 @@ def print_category_progress(category, count, target, type_label=""):
 
 def save_category_results(category, results, output_file):
     """Bir kategori için sonuçları kaydet"""
-    # Sonuçları DataFrame'e dönüştür
     df = pd.DataFrame(results)
-    
-    # CSV dosyasına kaydet
     df.to_csv(output_file, index=False)
     print_colored(f"Sonuçlar {output_file} dosyasına kaydedildi.", Fore.GREEN, Style.BRIGHT)
 
@@ -107,27 +103,25 @@ def process_category(category_name, category_description, target_positive, targe
     print_header(f"KATEGORİ: {category_name}")
     print_colored(f"Açıklama: {category_description}", Fore.CYAN)
     
-    # Sonuçları saklayacak liste
+   
     results = []
     
-    # Kategori için bulunan 1'lerin ve 0'ların sayısı
+    
     count_positive = 0
     count_negative = 0
     
-    # Güvenli dosya adı oluştur
+    
     safe_category_name = "".join(c if c.isalnum() else "_" for c in category_name)
     
-    # Sonuç klasörü yoksa oluştur
+    
     os.makedirs(CONFIG['output_folder'], exist_ok=True)
     
-    # Sonuç dosyasının adı
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
     output_file = os.path.join(CONFIG['output_folder'], f"{safe_category_name}_{timestamp}.csv")
     
-    # Checkpoint dosyası
+   
     checkpoint_file = os.path.join(CONFIG['output_folder'], f"{safe_category_name}_checkpoint.json")
     
-    # Checkpoint kontrolü
     processed_indices = []
     if os.path.exists(checkpoint_file):
         try:
@@ -143,10 +137,10 @@ def process_category(category_name, category_description, target_positive, targe
                 print_colored(f"Checkpoint yüklendi. Şimdiye kadar {count_positive}/{target_positive} adet pozitif eşleşme ve {count_negative}/{target_negative} adet negatif eşleşme bulundu.", Fore.GREEN)
                 print_colored(f"{len(processed_indices)} yorum işlendi.", Fore.BLUE)
                 
-                # İşlenmiş yorumları atla
+                
                 remaining_indices = [i for i in range(len(df)) if i not in processed_indices]
             else:
-                # Hedef değişmişse yeni başla
+                
                 results = []
                 count_positive = 0
                 count_negative = 0
@@ -160,29 +154,29 @@ def process_category(category_name, category_description, target_positive, targe
             processed_indices = []
             remaining_indices = list(range(len(df)))
     else:
-        # Checkpoint yoksa yeni başla
+        
         results = []
         count_positive = 0
         count_negative = 0
         processed_indices = []
         remaining_indices = list(range(len(df)))
     
-    # İşlem türüne göre analiz edilecek yorumları seç
+    
     if file_type == "all":
-        # Tüm yorumları rastgele sırayla işle
+       
         random.shuffle(remaining_indices)
     elif file_type == "positive_only":
-        # Hedef sayıya ulaşana kadar sadece 1'leri bul
+       
         pass
     elif file_type == "all_comments":
-        # Tüm yorumları sırayla işle (rastgele karma olmadan)
+       
         pass
     
-    # Her iki hedef için ilerleme durumunu göster
+    
     print_category_progress(category_name, count_positive, target_positive, "Pozitif")
     print_category_progress(category_name, count_negative, target_negative, "Negatif")
     
-    # Hedef sayıda 1 ve 0 bulana kadar devam et
+    
     start_time = time.time()
     total_target = target_positive + target_negative if file_type != "all_comments" else len(remaining_indices)
     
@@ -191,10 +185,10 @@ def process_category(category_name, category_description, target_positive, targe
               colour="green") as pbar:
         
         if file_type != "all_comments":
-            pbar.update(count_positive + count_negative)  # Mevcut ilerlemeyi göster
+            pbar.update(count_positive + count_negative) 
         
         for i in remaining_indices:
-            # Eğer hem pozitif hem negatif hedef tamamlandıysa ve tüm yorumları analiz etmiyorsak çık
+           
             if count_positive >= target_positive and count_negative >= target_negative and file_type != "all_comments":
                 print_colored(f"\n{category_name} için hedefler tamamlandı! ({target_positive} pozitif, {target_negative} negatif eşleşme bulundu)", Fore.GREEN, Style.BRIGHT)
                 break
@@ -209,31 +203,29 @@ def process_category(category_name, category_description, target_positive, targe
                     pbar.update(1)
                 continue
             
-            # Eğer pozitif hedef tamamlandıysa ve negatif hedef henüz tamamlanmadıysa 
-            # ve yeni bir yorumda 1 bulunursa, bu yorumu atla
+           
             if count_positive >= target_positive and count_negative < target_negative and file_type != "all_comments":
-                # Önce sonucu hesapla
+               
                 result = analyze_comment_for_category(comment, category_name, category_description)
                 if result == 1:
-                    # Zaten yeterince pozitif var, bu yorumu atla
+                   
                     processed_indices.append(i)
                     continue
             
-            # Eğer negatif hedef tamamlandıysa ve pozitif hedef henüz tamamlanmadıysa 
-            # ve yeni bir yorumda 0 bulunursa, bu yorumu atla
+          
             if count_negative >= target_negative and count_positive < target_positive and file_type != "all_comments":
-                # Önce sonucu hesapla
+                
                 result = analyze_comment_for_category(comment, category_name, category_description)
                 if result == 0:
-                    # Zaten yeterince negatif var, bu yorumu atla
+                    
                     processed_indices.append(i)
                     continue
             
-            # Yorumu analiz et (eğer yukarıdaki koşullardan geçtiyse)
+            
             if 'result' not in locals():
                 result = analyze_comment_for_category(comment, category_name, category_description)
             
-            # Sonuçları kaydet
+           
             result_dict = {
                 'Tarih': date,
                 'Yorum': comment,
@@ -241,43 +233,42 @@ def process_category(category_name, category_description, target_positive, targe
             }
             results.append(result_dict)
             
-            # İşlenen indeksi kaydet
+            
             processed_indices.append(i)
             
-            # Kategori sayaçlarını güncelle
+           
             if result == 1:
                 count_positive += 1
                 if count_positive <= target_positive and file_type != "all_comments":
-                    pbar.update(1)  # İlerleme çubuğunu güncelle
+                    pbar.update(1)  
                 
-                # Pozitif eşleşme bulunduğunda bildiri
+               
                 if count_positive <= target_positive or file_type == "all_comments":
                     print_colored("\nYENİ POZİTİF EŞLEŞME BULUNDU!", Fore.GREEN, Style.BRIGHT)
                     print_colored(f"Kategori: {category_name} - İlerleme: {count_positive}/{target_positive}", Fore.YELLOW)
                     print_colored(f"Yorum: {comment[:150]}..." if len(comment) > 150 else f"Yorum: {comment}", Fore.CYAN)
                     print_colored("-" * 50, Fore.YELLOW)
-            else:  # result == 0
+            else:  
                 count_negative += 1
                 if count_negative <= target_negative and file_type != "all_comments":
-                    pbar.update(1)  # İlerleme çubuğunu güncelle
-                
-                # Negatif eşleşme bulunduğunda bildiri
+                    pbar.update(1)  
+               
                 if count_negative <= target_negative or file_type == "all_comments":
                     print_colored("\nYENİ NEGATİF EŞLEŞME BULUNDU!", Fore.RED, Style.BRIGHT)
                     print_colored(f"Kategori: {category_name} - İlerleme: {count_negative}/{target_negative}", Fore.YELLOW)
                     print_colored(f"Yorum: {comment[:150]}..." if len(comment) > 150 else f"Yorum: {comment}", Fore.CYAN)
                     print_colored("-" * 50, Fore.YELLOW)
             
-            # 'result' değişkenini sıfırla
+           
             if 'result' in locals():
                 del result
             
             if file_type == "all_comments":
                 pbar.update(1)
             
-            # Her 5 yorumda bir checkpoint kaydet
+           
             if len(results) % 5 == 0:
-                # Geçen süre
+              
                 elapsed_time = time.time() - start_time
                 total_count = count_positive + count_negative
                 
@@ -288,7 +279,6 @@ def process_category(category_name, category_description, target_positive, targe
                 else:
                     remaining_time = 0
                 
-                # Checkpoint kaydet
                 checkpoint = {
                     'category': category_name,
                     'target_positive': target_positive,
@@ -302,21 +292,19 @@ def process_category(category_name, category_description, target_positive, targe
                 with open(checkpoint_file, 'w', encoding='utf-8') as f:
                     json.dump(checkpoint, f, ensure_ascii=False)
                 
-                # İlerleme durumunu göster
                 if file_type != "all_comments":
                     print_category_progress(category_name, count_positive, target_positive, "Pozitif")
                     print_category_progress(category_name, count_negative, target_negative, "Negatif")
                     
-                    # Tahmini kalan süre
+               
                     if remaining_time > 0:
                         hours, remainder = divmod(remaining_time, 3600)
                         minutes, seconds = divmod(remainder, 60)
                         print_colored(f"Tahmini kalan süre: {int(hours)}:{int(minutes):02d}:{int(seconds):02d}", Fore.BLUE)
     
-    # Sonuçları kaydet
+
     save_category_results(category_name, results, output_file)
-    
-    # İşlem özeti
+
     elapsed_time = time.time() - start_time
     hours, remainder = divmod(elapsed_time, 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -327,7 +315,7 @@ def process_category(category_name, category_description, target_positive, targe
     print_colored(f"Bulunan pozitif eşleşme sayısı: {count_positive}/{target_positive}", Fore.GREEN)
     print_colored(f"Bulunan negatif eşleşme sayısı: {count_negative}/{target_negative}", Fore.RED)
     
-    # Tamamlanma durumunu döndür
+
     return (count_positive >= target_positive and count_negative >= target_negative), count_positive, count_negative, output_file
 
 def get_default_categories_and_descriptions():
@@ -410,8 +398,6 @@ def get_default_categories_and_descriptions():
 
 def main():
     print_header("Tek Kategori Analiz Programı", 60)
-    
-    # Veri setini seç
     print_colored("\nVeri setini seçin:", Fore.YELLOW)
     print_colored("1. filtrelenmis_yorumlar.csv (varsayılan)", Fore.CYAN)
     print_colored("2. Başka bir CSV dosyası", Fore.CYAN)
@@ -423,7 +409,7 @@ def main():
     else:
         csv_file_path = "filtrelenmis_yorumlar.csv"
     
-    # Önceden tanımlı kategorileri göster
+   
     categories, descriptions = get_default_categories_and_descriptions()
     
     print_colored("\nÖnceden tanımlı kategoriler:", Fore.YELLOW)
@@ -437,7 +423,7 @@ def main():
     category_choice = input("Seçiminiz (1/2): ").strip()
     
     if category_choice == "1":
-        # Kullanıcıdan kategori seçimi
+       
         cat_index = int(input("\nKategori numarası seçin (1-16): ")) - 1
         if 0 <= cat_index < len(categories):
             category_name = categories[cat_index]
@@ -446,37 +432,37 @@ def main():
             print_colored("Geçersiz kategori numarası. Program sonlandırılıyor.", Fore.RED)
             return
     else:
-        # Kullanıcıdan özel kategori bilgilerini al
+        
         category_name = input("\nKategori adı: ")
         
-        # Özel kategori tanımını al
+        
         print_colored("\nKategori açıklaması ve anahtar kelimeleri girin:", Fore.YELLOW)
         print_colored("(Birden fazla satır yazabilirsiniz. Bitirmek için boş bir satır girin)", Fore.BLUE)
         category_description = ""
         while True:
             line = input()
-            if not line:  # Boş satır girildiğinde bitir
+            if not line: 
                 break
             category_description += line + "\n"
     
-    # İşlem türünü seç
+    
     print_colored("\nAnalizin nasıl yapılacağını seçin:", Fore.YELLOW)
     print_colored("1. Belirli sayıda pozitif ve negatif eşleşme bulana kadar rastgele ara (varsayılan)", Fore.CYAN)
     print_colored("2. Tüm yorumları analiz et ve hepsini CSV'ye kaydet", Fore.CYAN)
     
     process_type = input("Seçiminiz (1/2): ").strip()
     
-    # Hedef sayıları al
+   
     if process_type != "2":
         target_positive = int(input("\nBu kategori için kaç tane pozitif eşleşme (1) bulmak istiyorsunuz?: "))
         target_negative = int(input("Bu kategori için kaç tane negatif eşleşme (0) bulmak istiyorsunuz?: "))
-        file_type = "all"  # Rastgele ara
+        file_type = "all"  
     else:
-        target_positive = 0  # Hedef olmadan tüm yorumları işle
+        target_positive = 0  
         target_negative = 0
-        file_type = "all_comments"  # Tüm yorumları sırayla işle
+        file_type = "all_comments"  
     
-    # Veri setini yükle
+    
     try:
         print_colored(f"\nVeri seti yükleniyor: {csv_file_path}", Fore.BLUE)
         df = pd.read_csv(csv_file_path)
@@ -485,7 +471,7 @@ def main():
         print_colored(f"CSV yükleme hatası: {str(e)}", Fore.RED, Style.BRIGHT)
         return
     
-    # Seçilen kategori için işlem yap
+   
     completed, count_positive, count_negative, output_file = process_category(
         category_name, 
         category_description, 
@@ -495,7 +481,7 @@ def main():
         file_type
     )
     
-    # Sonuç raporu
+
     print_header("SONUÇ RAPORU")
     
     if file_type == "all_comments":

@@ -1,0 +1,43 @@
+# Python standard ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# Package management
+pip-selfcheck.json
+pip-log.txt
+*.egg-info/
+
+# IDE and editor files
+.vscode/
+.idea/
+
+# Testing
+.tox/
+.coverage
+.hypothesis/
+.pytest_cache/
+
+# Project-specific ignores
+
+# Outputs from labeling and analysis
+kategori_sonuclari/
+*.xlsx
+*.csv
+*.json
+
+# Trained models
+model_*.pkl
+
+# Logs and temporary files
+*.log
+*.bak
+hatali_sayfalar.txt
+error_worker_*.png
+
+# Web scraping drivers
+chromedriver.exe

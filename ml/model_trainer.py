@@ -26,7 +26,19 @@ def make_dense(X):
     return X.toarray()
 
 # 📁 Excel klasörü - BURAYA EXCEL DOSYALARININ YOLUNU GİRİN
-excel_folder = r"C:\Users\hamdi\Downloads\Exceller_Kategori_Atamaları"
+# --- CONFIGURATION ---
+# Directory containing the labeled Excel files from the LLM labeling step.
+excel_folder = "kategori_sonuclari"
+
+# Directories for outputs
+output_dir = "outputs"
+model_dir = os.path.join(output_dir, "models")
+report_dir = os.path.join(output_dir, "reports")
+
+# Create directories if they don't exist
+os.makedirs(model_dir, exist_ok=True)
+os.makedirs(report_dir, exist_ok=True)
+# --- END CONFIGURATION ---
 
 # Klasör yoksa hata ver
 if not os.path.exists(excel_folder):
@@ -364,7 +376,8 @@ for file_idx, file in enumerate(excel_files):
         
         # Modeli kaydet
         model_filename = f"model_{category}.pkl"
-        joblib.dump({'model': best_model, 'vectorizer': tfidf}, model_filename)
+        model_path = os.path.join(model_dir, model_filename)
+        joblib.dump({'model': best_model, 'vectorizer': tfidf}, model_path)
         print(f"💾 Model kaydedildi: {model_filename}")
         
         print(f"✅ {category} için model eğitildi")
@@ -390,12 +403,12 @@ for file_idx, file in enumerate(excel_files):
 try:
     if ogrenme_performanslari:
         performans_df = pd.DataFrame(ogrenme_performanslari)
-        performans_df.to_excel("ogrenme_seti_performanslari.xlsx", index=False)
+        performans_df.to_excel(os.path.join(report_dir, "ogrenme_seti_performanslari.xlsx"), index=False)
         print("\n✅ Öğrenme seti performans metrikleri 'ogrenme_seti_performanslari.xlsx' dosyasına kaydedildi.")
     
     if test_performanslari:
         test_performans_df = pd.DataFrame(test_performanslari)
-        test_performans_df.to_excel("test_seti_performanslari.xlsx", index=False)
+        test_performans_df.to_excel(os.path.join(report_dir, "test_seti_performanslari.xlsx"), index=False)
         print("\n✅ Test seti performans metrikleri 'test_seti_performanslari.xlsx' dosyasına kaydedildi.")
         
         # Genel başarı analizi
@@ -427,7 +440,7 @@ try:
         })
     
     summary_df = pd.DataFrame(summary_data)
-    summary_df.to_excel("model_ozet.xlsx", index=False)
+    summary_df.to_excel(os.path.join(report_dir, "model_ozet.xlsx"), index=False)
     print("\n✅ Model özet tablosu 'model_ozet.xlsx' dosyasına kaydedildi.")
         
 except Exception as e:

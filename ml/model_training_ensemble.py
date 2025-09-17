@@ -33,7 +33,19 @@ turkish_stop_words = [
 ]
 
 # 📁 Excel klasörü
-excel_folder = r"C:\Users\hamdi\Downloads\Exceller_Kategori_Atamaları"
+# --- CONFIGURATION ---
+# Directory containing the labeled Excel files from the LLM labeling step.
+excel_folder = "kategori_sonuclari"
+
+# Directories for outputs
+output_dir = "outputs"
+model_dir = os.path.join(output_dir, "models")
+report_dir = os.path.join(output_dir, "reports")
+
+# Create directories if they don't exist
+os.makedirs(model_dir, exist_ok=True)
+os.makedirs(report_dir, exist_ok=True)
+# --- END CONFIGURATION ---
 
 # 📄 Performans sonuçlarını tutacağımız listeler
 train_results = []
@@ -185,7 +197,8 @@ for category in tqdm(train_data['Kategori'].unique(), desc="Kategori İşleniyor
     
     # Modeli kaydetme
     model_filename = f"model_{category}.pkl"
-    joblib.dump((best_model, tfidf), model_filename)
+    model_path = os.path.join(model_dir, model_filename)
+    joblib.dump((best_model, tfidf), model_path)
     print(f"💾 Model kaydedildi: {model_filename}")
     
     # Tahmin edilecek veriler için tahmin yap
@@ -250,14 +263,14 @@ for category in tqdm(train_data['Kategori'].unique(), desc="Kategori İşleniyor
 # 1. Performans sonuçları
 all_results = train_results + test_results
 results_df = pd.DataFrame(all_results)
-results_df.to_excel("ensemble_model_tum_performanslar.xlsx", index=False)
+results_df.to_excel(os.path.join(report_dir, "ensemble_model_tum_performanslar.xlsx"), index=False)
 
 # 2. Özet performans tablosu
 pivot_df = results_df.pivot_table(index='Kategori', 
                                  columns='Veri_Seti', 
                                  values=['Accuracy', 'Precision', 'Recall', 'F1-Score'],
                                  aggfunc='first')
-pivot_df.to_excel("ensemble_model_ozet_performanslar.xlsx")
+pivot_df.to_excel(os.path.join(report_dir, "ensemble_model_ozet_performanslar.xlsx"))
 
 # 3. Tüm tahminleri içeren tablo
 predictions_df = pd.DataFrame(all_predictions)
@@ -274,11 +287,11 @@ for idx, row in predictions_df.iterrows():
 
 # Son formatta tahmin sonuçlarını kaydetme
 final_columns = ['Yorum_ID', 'Tarih', 'Yorum', 'Duygu', 'Duygu_Polaritesi'] + list(categories)
-predictions_df[final_columns].to_excel("ensemble_tahmin_sonuclari.xlsx", index=False)
+predictions_df[final_columns].to_excel(os.path.join(report_dir, "ensemble_tahmin_sonuclari.xlsx"), index=False)
 
 # Sadece 1 atanan yorumlar için duygu analizi sonuçlarını kaydetme
 positives_df = predictions_df[predictions_df['Tahmin'] == 1]
-positives_df.to_excel("pozitif_tahmin_duygu_analizi.xlsx", index=False)
+positives_df.to_excel(os.path.join(report_dir, "pozitif_tahmin_duygu_analizi.xlsx"), index=False)
 
 total_time = time.time() - start_time
 print(f"\n⏱️ Toplam çalışma süresi: {total_time/60:.2f} dakika")
